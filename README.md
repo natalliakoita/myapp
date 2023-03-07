@@ -1,1 +1,1 @@
-# myapp
+# Cloud Native Go - myapp
