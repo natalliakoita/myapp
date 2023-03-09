@@ -1,15 +1,11 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"myapp/model"
 	"myapp/repository"
-	"myapp/util/validator"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
 )
 
@@ -20,17 +16,14 @@ const (
 	appErrFormDecodingFailure    = "form decoding failure"
 	appErrDataUpdateFailure      = "data update failure"
 	appErrFormErrResponseFailure = "form error response failure"
+	appErrUintRequestFailure     = "id request failure"
 )
 
 func (a *App) HandleListBooks(w http.ResponseWriter, r *http.Request) {
 	books, err := repository.ListBooks(a.db)
 	if err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrDataAccessFailure)
+		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
 		return
-
 	}
 
 	if books == nil {
@@ -39,64 +32,22 @@ func (a *App) HandleListBooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dtos := books.ToDto()
-	if err := json.NewEncoder(w).Encode(dtos); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrJsonCreationFailure)
-		return
-	}
+	RespondJSON(w, r, a, &dtos, http.StatusInternalServerError, appErrJsonCreationFailure)
 }
 
 func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 	form := model.BookForm{}
-	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrFormDecodingFailure)
-		return
-	}
-
-	if err := a.validator.Struct(form); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		resp := validator.ToErrResponse(err)
-		if resp == nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error": "%v"}`, appErrFormErrResponseFailure)
-			return
-		}
-
-		respBody, err := json.Marshal(resp)
-		if err != nil {
-			a.logger.Warn().Err(err).Msg("")
-
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error": "%v"}`, appErrJsonCreationFailure)
-			return
-		}
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write(respBody)
-		return
-	}
+	ParseRequestBody(w, r, a, &form, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
 
 	bookModel, err := form.ToModel()
 	if err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrFormDecodingFailure)
+		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
 		return
 	}
 
 	book, err := repository.CreateBook(a.db, bookModel)
 	if err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrDataCreationFailure)
+		RespondError(w, a, err, http.StatusInternalServerError, appErrDataCreationFailure)
 		return
 	}
 
@@ -105,99 +56,46 @@ func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) HandleReadBook(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(chi.URLParam(r, "id"), 0, 64)
-	if err != nil || id == 0 {
-		a.logger.Info().Msgf("can not parse ID: %v", id)
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
+	id, err := ParseUint(w, r, a)
+	if err != nil {
+		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
 	}
 
-	book, err := repository.ReadBook(a.db, uint(id))
+	book, err := repository.ReadBook(a.db, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrDataAccessFailure)
+		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
 		return
 	}
 
 	dto := book.ToDto()
-	if err := json.NewEncoder(w).Encode(dto); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrJsonCreationFailure)
-		return
-	}
+	RespondJSON(w, r, a, &dto, http.StatusInternalServerError, appErrJsonCreationFailure)
 }
 
 func (a *App) HandleUpdateBook(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(chi.URLParam(r, "id"), 0, 64)
-	if err != nil || id == 0 {
-		a.logger.Info().Msgf("can not parse ID: %v", id)
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
+	id, err := ParseUint(w, r, a)
+	if err != nil {
+		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
 	}
 
 	form := &model.BookForm{}
-	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrFormDecodingFailure)
-		return
-	}
-
-	if err := a.validator.Struct(form); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		resp := validator.ToErrResponse(err)
-		if resp == nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error": "%v"}`, appErrFormErrResponseFailure)
-			return
-		}
-
-		respBody, err := json.Marshal(resp)
-		if err != nil {
-			a.logger.Warn().Err(err).Msg("")
-
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error": "%v"}`, appErrJsonCreationFailure)
-			return
-		}
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write(respBody)
-		return
-	}
+	ParseRequestBody(w, r, a, &form, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
 
 	bookModel, err := form.ToModel()
 	if err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrFormDecodingFailure)
-		return
+		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
 	}
 
-	bookModel.ID = uint(id)
+	bookModel.ID = id
 	if err := repository.UpdateBook(a.db, bookModel); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrDataUpdateFailure)
+		RespondError(w, a, err, http.StatusInternalServerError, appErrDataUpdateFailure)
 		return
 	}
 
@@ -206,19 +104,13 @@ func (a *App) HandleUpdateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(chi.URLParam(r, "id"), 0, 64)
-	if err != nil || id == 0 {
-		a.logger.Info().Msgf("can not parse ID: %v", id)
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
+	id, err := ParseUint(w, r, a)
+	if err != nil {
+		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
 	}
 
-	if err := repository.DeleteBook(a.db, uint(id)); err != nil {
-		a.logger.Warn().Err(err).Msg("")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": "%v"}`, appErrDataAccessFailure)
+	if err := repository.DeleteBook(a.db, id); err != nil {
+		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
 		return
 	}
 
