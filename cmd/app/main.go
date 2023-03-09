@@ -5,7 +5,6 @@ import (
 	"myapp/app/router"
 	"myapp/config"
 	lr "myapp/util/logger"
-	"myapp/util/validator"
 	"net/http"
 
 	dbConn "myapp/adapter/gorm"
@@ -26,9 +25,9 @@ func main() {
 		db.LogMode(true)
 	}
 
-	validator := validator.New()
+	// validator := validator.New()
 
-	application := app.New(logger, db, validator)
+	application := app.New(logger, db)
 
 	appRouter := router.New(application)
 
