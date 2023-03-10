@@ -3,51 +3,28 @@ package app
 import (
 	"fmt"
 	"myapp/model"
-	"myapp/repository"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
 )
 
-const (
-	appErrDataAccessFailure      = "data access failure"
-	appErrJsonCreationFailure    = "json creation failure"
-	appErrDataCreationFailure    = "data creation failure"
-	appErrFormDecodingFailure    = "form decoding failure"
-	appErrDataUpdateFailure      = "data update failure"
-	appErrFormErrResponseFailure = "form error response failure"
-	appErrUintRequestFailure     = "id request failure"
-)
-
 func (a *App) HandleListBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := repository.ListBooks(a.db)
+	books, err := a.svcBook.GetListBook(r.Context())
 	if err != nil {
-		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
+		RespondError(w, a, fmt.Errorf("data access failure: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	if books == nil {
-		fmt.Fprint(w, "[]")
-		return
-	}
-
-	dtos := books.ToDto()
-	RespondJSON(w, r, a, &dtos, http.StatusInternalServerError, appErrJsonCreationFailure)
+	RespondJSON(w, r, a, &books, http.StatusInternalServerError)
 }
 
 func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
-	form := model.BookForm{}
-	ParseRequestBody(w, r, a, &form, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
+	bookForm := model.BookForm{}
+	ParseRequestBody(w, r, a, &bookForm, http.StatusUnprocessableEntity)
 
-	bookModel, err := form.ToModel()
+	book, err := a.svcBook.CreateBook(r.Context(), &bookForm)
 	if err != nil {
-		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
-		return
-	}
-
-	book, err := repository.CreateBook(a.db, bookModel)
-	if err != nil {
-		RespondError(w, a, err, http.StatusInternalServerError, appErrDataCreationFailure)
+		RespondError(w, a, fmt.Errorf("data creation failure: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -58,44 +35,37 @@ func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 func (a *App) HandleReadBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
-		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
+		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
 	}
 
-	book, err := repository.ReadBook(a.db, id)
+	book, err := a.svcBook.GetBookByID(r.Context(), id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
+		RespondError(w, a, fmt.Errorf("data access failure: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	dto := book.ToDto()
-	RespondJSON(w, r, a, &dto, http.StatusInternalServerError, appErrJsonCreationFailure)
+	RespondJSON(w, r, a, &book, http.StatusInternalServerError)
 }
 
 func (a *App) HandleUpdateBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
-		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
+		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
 	}
 
-	form := &model.BookForm{}
-	ParseRequestBody(w, r, a, &form, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
+	bookForm := &model.BookForm{}
+	ParseRequestBody(w, r, a, &bookForm, http.StatusUnprocessableEntity)
 
-	bookModel, err := form.ToModel()
-	if err != nil {
-		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrFormDecodingFailure)
-	}
-
-	bookModel.ID = id
-	if err := repository.UpdateBook(a.db, bookModel); err != nil {
+	if err := a.svcBook.UpdateBook(r.Context(), id, bookForm); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		RespondError(w, a, err, http.StatusInternalServerError, appErrDataUpdateFailure)
+		RespondError(w, a, fmt.Errorf("data update failure: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -106,11 +76,11 @@ func (a *App) HandleUpdateBook(w http.ResponseWriter, r *http.Request) {
 func (a *App) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
-		RespondError(w, a, err, http.StatusUnprocessableEntity, appErrUintRequestFailure)
+		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
 	}
 
-	if err := repository.DeleteBook(a.db, id); err != nil {
-		RespondError(w, a, err, http.StatusInternalServerError, appErrDataAccessFailure)
+	if err := a.svcBook.DeleteBook(r.Context(), id); err != nil {
+		RespondError(w, a, fmt.Errorf("data access failure: %w", err), http.StatusInternalServerError)
 		return
 	}
 

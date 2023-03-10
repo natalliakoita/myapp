@@ -17,8 +17,6 @@ type Book struct {
 	Description   string
 }
 
-type BookDtos []*BookDto
-
 type BookDto struct {
 	ID            uint   `json:"id"`
 	Title         string `json:"title"`
@@ -37,15 +35,6 @@ func (b Book) ToDto() *BookDto {
 		ImageUrl:      b.ImageUrl,
 		Description:   b.Description,
 	}
-}
-
-func (bs Books) ToDto() BookDtos {
-	dtos := make([]*BookDto, len(bs))
-	for i, b := range bs {
-		dtos[i] = b.ToDto()
-	}
-
-	return dtos
 }
 
 type BookForm struct {

@@ -1,23 +1,22 @@
 package app
 
 import (
+	"myapp/service"
 	"myapp/util/logger"
-
-	"github.com/jinzhu/gorm"
 )
 
 type App struct {
-	logger *logger.Logger
-	db     *gorm.DB
+	logger  *logger.Logger
+	svcBook service.BookServiceInterface
 }
 
-func New(
+func NewApp(
 	logger *logger.Logger,
-	db *gorm.DB,
+	svcBook service.BookServiceInterface,
 ) *App {
 	return &App{
-		logger: logger,
-		db:     db,
+		logger:  logger,
+		svcBook: svcBook,
 	}
 }
 

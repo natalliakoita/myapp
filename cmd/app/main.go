@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"myapp/app/router"
 	"myapp/config"
+	"myapp/repository"
+	"myapp/service"
 	lr "myapp/util/logger"
 	"net/http"
 
@@ -16,18 +18,21 @@ func main() {
 
 	logger := lr.New(appConf.Debug)
 
-	db, err := dbConn.New(appConf)
+	conn, err := dbConn.New(appConf)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("")
 		return
 	}
 	if appConf.Debug {
-		db.LogMode(true)
+		conn.LogMode(true)
 	}
+
+	db := repository.NewBookRepo(conn)
+	svcBook := service.NewBookService(db)
 
 	// validator := validator.New()
 
-	application := app.New(logger, db)
+	application := app.NewApp(logger, svcBook)
 
 	appRouter := router.New(application)
 
