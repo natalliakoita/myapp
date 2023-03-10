@@ -9,25 +9,25 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func ParseRequestBody(w http.ResponseWriter, r *http.Request, a *App, v interface{}, statusCode int, appErr string) {
+func ParseRequestBody(w http.ResponseWriter, r *http.Request, a *App, v interface{}, statusCode int) {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		RespondError(w, a, err, statusCode, appErr)
+		RespondError(w, a, fmt.Errorf("parse request body: %w", err), statusCode)
 		return
 	}
 }
 
-func RespondJSON(w http.ResponseWriter, r *http.Request, a *App, v interface{}, statusCode int, appErr string) {
+func RespondJSON(w http.ResponseWriter, r *http.Request, a *App, v interface{}, statusCode int) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		RespondError(w, a, err, statusCode, appErr)
+		RespondError(w, a, fmt.Errorf("data encode: %w", err), statusCode)
 		return
 	}
 }
 
-func RespondError(w http.ResponseWriter, a *App, err error, statusCode int, appErr string) {
+func RespondError(w http.ResponseWriter, a *App, err error, statusCode int) {
 	a.logger.Warn().Err(err).Msg("")
 
 	w.WriteHeader(statusCode)
-	fmt.Fprintf(w, `{"error": "%v"}`, appErr)
+	fmt.Fprintf(w, `{"error": "%v"}`, err)
 }
 
 func ParseUint(w http.ResponseWriter, r *http.Request, a *App) (uint, error) {
