@@ -8,6 +8,25 @@ import (
 
 type Books []*Book
 
+func (b Books) ToDto() []BookDto {
+	books := make([]BookDto, 0)
+
+	for i := 0; i < len(b); i++ {
+		book := BookDto{
+			ID:            b[i].ID,
+			Title:         b[i].Title,
+			Author:        b[i].Author,
+			PublishedDate: b[i].PublishedDate.Format("2006-01-02"),
+			ImageUrl:      b[i].ImageUrl,
+			Description:   b[i].Description,
+		}
+
+		books = append(books, book)
+	}
+
+	return books
+}
+
 type Book struct {
 	gorm.Model
 	Title         string

@@ -80,10 +80,10 @@ func (mr *MockBookServiceInterfaceMockRecorder) GetBookByID(ctx, id interface{})
 }
 
 // GetListBook mocks base method.
-func (m *MockBookServiceInterface) GetListBook(ctx context.Context) (model.Books, error) {
+func (m *MockBookServiceInterface) GetListBook(ctx context.Context) ([]model.BookDto, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetListBook", ctx)
-	ret0, _ := ret[0].(model.Books)
+	ret0, _ := ret[0].([]model.BookDto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
