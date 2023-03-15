@@ -17,7 +17,7 @@ func NewBookService(bookRepo repository.BookRepoInterface) *BookService {
 type BookServiceInterface interface {
 	CreateBook(ctx context.Context, book *model.BookForm) (*model.BookDto, error)
 	GetBookByID(ctx context.Context, id uint) (*model.BookDto, error)
-	GetListBook(ctx context.Context) (model.Books, error)
+	GetListBook(ctx context.Context) ([]model.BookDto, error)
 	UpdateBook(ctx context.Context, id uint, book *model.BookForm) error
 	DeleteBook(ctx context.Context, id uint) error
 }
@@ -49,13 +49,15 @@ func (b *BookService) GetBookByID(ctx context.Context, id uint) (*model.BookDto,
 	return bookDto, nil
 }
 
-func (b *BookService) GetListBook(ctx context.Context) (model.Books, error) {
+func (b *BookService) GetListBook(ctx context.Context) ([]model.BookDto, error) {
 	books, err := b.bookRepo.ListBooks(ctx)
 	if err != nil {
-		return model.Books{}, err
+		return []model.BookDto{}, err
 	}
 
-	return books, nil
+	booksDto := books.ToDto()
+
+	return booksDto, nil
 }
 
 func (b *BookService) UpdateBook(ctx context.Context, id uint, book *model.BookForm) error {

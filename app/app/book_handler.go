@@ -15,6 +15,7 @@ func (a *App) HandleListBooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	RespondJSON(w, r, a, &books, http.StatusInternalServerError)
 }
 
@@ -30,7 +31,8 @@ func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 
 	a.logger.Info().Msgf("New book created: %d", book.ID)
 	w.WriteHeader(http.StatusCreated)
-	RespondJSON(w, r, a, &book, http.StatusBadRequest)
+
+	RespondJSON(w, r, a, book, http.StatusInternalServerError)
 }
 
 func (a *App) HandleReadBook(w http.ResponseWriter, r *http.Request) {
