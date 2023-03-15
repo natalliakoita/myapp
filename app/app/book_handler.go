@@ -30,12 +30,14 @@ func (a *App) HandleCreateBook(w http.ResponseWriter, r *http.Request) {
 
 	a.logger.Info().Msgf("New book created: %d", book.ID)
 	w.WriteHeader(http.StatusCreated)
+	RespondJSON(w, r, a, &book, http.StatusBadRequest)
 }
 
 func (a *App) HandleReadBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
 		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
+		return
 	}
 
 	book, err := a.svcBook.GetBookByID(r.Context(), id)
@@ -55,6 +57,7 @@ func (a *App) HandleUpdateBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
 		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
+		return
 	}
 
 	bookForm := &model.BookForm{}
@@ -77,6 +80,7 @@ func (a *App) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	id, err := ParseUint(w, r, a)
 	if err != nil {
 		RespondError(w, a, fmt.Errorf("id request failure: %w", err), http.StatusUnprocessableEntity)
+		return
 	}
 
 	if err := a.svcBook.DeleteBook(r.Context(), id); err != nil {

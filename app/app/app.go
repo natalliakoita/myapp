@@ -6,7 +6,7 @@ import (
 )
 
 type App struct {
-	logger  *logger.Logger
+	logger  logger.LoggerInterface
 	svcBook service.BookServiceInterface
 }
 
@@ -21,5 +21,5 @@ func NewApp(
 }
 
 func (app *App) Logger() *logger.Logger {
-	return app.logger
+	return app.Logger()
 }
