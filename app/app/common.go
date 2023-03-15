@@ -31,6 +31,8 @@ func RespondError(w http.ResponseWriter, a *App, err error, statusCode int) {
 }
 
 func ParseUint(w http.ResponseWriter, r *http.Request, a *App) (uint, error) {
+	q1 := chi.URLParam(r, "id")
+	_ = q1
 	id, err := strconv.ParseUint(chi.URLParam(r, "id"), 0, 64)
 	if err != nil || id == 0 {
 		a.logger.Info().Msgf("can not parse ID: %v", id)

@@ -15,25 +15,27 @@ func NewBookService(bookRepo repository.BookRepoInterface) *BookService {
 }
 
 type BookServiceInterface interface {
-	CreateBook(ctx context.Context, book *model.BookForm) (*model.Book, error)
+	CreateBook(ctx context.Context, book *model.BookForm) (*model.BookDto, error)
 	GetBookByID(ctx context.Context, id uint) (*model.BookDto, error)
 	GetListBook(ctx context.Context) (model.Books, error)
 	UpdateBook(ctx context.Context, id uint, book *model.BookForm) error
 	DeleteBook(ctx context.Context, id uint) error
 }
 
-func (b *BookService) CreateBook(ctx context.Context, book *model.BookForm) (*model.Book, error) {
+func (b *BookService) CreateBook(ctx context.Context, book *model.BookForm) (*model.BookDto, error) {
 	bookModel, err := book.ToModel()
 	if err != nil {
-		return bookModel, err
+		return &model.BookDto{}, err
 	}
 
 	respBook, err := b.bookRepo.CreateBook(ctx, bookModel)
 	if err != nil {
-		return &model.Book{}, err
+		return &model.BookDto{}, err
 	}
 
-	return respBook, nil
+	resp := respBook.ToDto()
+
+	return resp, nil
 }
 
 func (b *BookService) GetBookByID(ctx context.Context, id uint) (*model.BookDto, error) {

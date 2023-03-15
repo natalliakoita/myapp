@@ -62,3 +62,10 @@ func (l *Logger) Fatal() *zerolog.Event {
 func (l *Logger) Warn() *zerolog.Event {
 	return l.logger.Warn()
 }
+
+type LoggerInterface interface {
+	Output(w io.Writer) zerolog.Logger
+	Info() *zerolog.Event
+	Fatal() *zerolog.Event
+	Warn() *zerolog.Event
+}
