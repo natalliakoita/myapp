@@ -86,6 +86,10 @@ func (a *App) HandleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := a.svcBook.DeleteBook(r.Context(), id); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		RespondError(w, a, fmt.Errorf("data access failure: %w", err), http.StatusInternalServerError)
 		return
 	}
