@@ -356,8 +356,213 @@ func TestApp_ListBooks(t *testing.T) {
 				assert.Contains(t, str2, str1)
 			case http.StatusNotFound:
 				assert.Equal(t, rr.Code, tt.statusCode)
-			// case http.StatusUnprocessableEntity:
-			// 	assert.Equal(t, rr.Code, tt.statusCode)
+			case http.StatusInternalServerError:
+				assert.Equal(t, rr.Code, tt.statusCode)
+			}
+		})
+	}
+}
+
+func TestApp_HandleUpdateBook(t *testing.T) {
+	type args struct {
+		jsonStr []byte
+		id      string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantErr     bool
+		statusCode  int
+		prepareMock func(mockSvc *mock_service.MockBookServiceInterface)
+	}{
+		{
+			name: "success call",
+			args: args{
+				jsonStr: []byte(`{"title":"title", "author":"author", "published_date":"2006-01-02", "image_url":"image_url", "description":"description"}`),
+				id:      "1",
+			},
+			wantErr:    false,
+			statusCode: http.StatusAccepted,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().UpdateBook(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+			},
+		},
+		{
+			name: "bad request",
+			args: args{
+				jsonStr: []byte(`{"title":"title", "author":"author", "published_date":"2006-01-02", "image_url":"image_url", "description":"description"}`),
+				id:      "2",
+			},
+			wantErr:    true,
+			statusCode: http.StatusNotFound,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().UpdateBook(gomock.Any(), gomock.Any(), gomock.Any()).Return(gorm.ErrRecordNotFound).AnyTimes()
+			},
+		},
+		{
+			name: "id request failure",
+			args: args{
+				jsonStr: []byte(`{"title":"title", "author":"author", "published_date":"2006-01-02", "image_url":"image_url", "description":"description"}`),
+				id:      "invalidParam",
+			},
+			wantErr:    true,
+			statusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name: "server error",
+			args: args{
+				jsonStr: []byte(`{"title":"title", "author":"author", "published_date":"2006-01-02", "image_url":"image_url", "description":"description"}`),
+				id:      "1",
+			},
+			wantErr:    true,
+			statusCode: http.StatusInternalServerError,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().UpdateBook(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("data update failure")).AnyTimes()
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+
+			mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+			mockLogger.EXPECT().Info().AnyTimes()
+			mockLogger.EXPECT().Warn().AnyTimes()
+
+			mockBookService := mock_service.NewMockBookServiceInterface(ctrl)
+
+			if tt.prepareMock != nil {
+				tt.prepareMock(mockBookService)
+			}
+
+			path := fmt.Sprintf("api/v1/books/%s", tt.args.id)
+			req, err := http.NewRequest("PUT", path, bytes.NewBuffer(tt.args.jsonStr))
+			if err != nil {
+				t.Fatal(err)
+			}
+			rr := httptest.NewRecorder()
+
+			a := &App{
+				logger:  mockLogger,
+				svcBook: mockBookService,
+			}
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.args.id)
+
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			handler := http.HandlerFunc(a.HandleUpdateBook)
+			handler.ServeHTTP(rr, req)
+
+			switch tt.statusCode {
+			case http.StatusAccepted:
+			case http.StatusNotFound:
+				assert.Equal(t, rr.Code, tt.statusCode)
+			case http.StatusUnprocessableEntity:
+				assert.Equal(t, rr.Code, tt.statusCode)
+			case http.StatusInternalServerError:
+				assert.Equal(t, rr.Code, tt.statusCode)
+			}
+		})
+	}
+}
+
+func TestApp_HandleDeleteBook(t *testing.T) {
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantErr     bool
+		statusCode  int
+		prepareMock func(mockSvc *mock_service.MockBookServiceInterface)
+	}{
+		{
+			name: "success call",
+			args: args{
+				id: "1",
+			},
+			wantErr:    false,
+			statusCode: http.StatusAccepted,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().DeleteBook(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+			},
+		},
+		{
+			name: "bad request",
+			args: args{
+				id: "2",
+			},
+			wantErr:    true,
+			statusCode: http.StatusNotFound,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().DeleteBook(gomock.Any(), gomock.Any()).Return(gorm.ErrRecordNotFound).AnyTimes()
+			},
+		},
+		{
+			name: "id request failure",
+			args: args{
+				id: "invalidParam",
+			},
+			wantErr:    true,
+			statusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name: "server error",
+			args: args{
+				id: "1",
+			},
+			wantErr:    true,
+			statusCode: http.StatusInternalServerError,
+			prepareMock: func(mockSvc *mock_service.MockBookServiceInterface) {
+				mockSvc.EXPECT().DeleteBook(gomock.Any(), gomock.Any()).Return(errors.New("data access failure")).AnyTimes()
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+
+			mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+			mockLogger.EXPECT().Info().AnyTimes()
+			mockLogger.EXPECT().Warn().AnyTimes()
+
+			mockBookService := mock_service.NewMockBookServiceInterface(ctrl)
+
+			if tt.prepareMock != nil {
+				tt.prepareMock(mockBookService)
+			}
+
+			path := fmt.Sprintf("api/v1/books/%s", tt.args.id)
+			req, err := http.NewRequest("DELETE", path, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rr := httptest.NewRecorder()
+
+			a := &App{
+				logger:  mockLogger,
+				svcBook: mockBookService,
+			}
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.args.id)
+
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			handler := http.HandlerFunc(a.HandleDeleteBook)
+			handler.ServeHTTP(rr, req)
+
+			switch tt.statusCode {
+			case http.StatusAccepted:
+			case http.StatusNotFound:
+				assert.Equal(t, rr.Code, tt.statusCode)
+			case http.StatusUnprocessableEntity:
+				assert.Equal(t, rr.Code, tt.statusCode)
 			case http.StatusInternalServerError:
 				assert.Equal(t, rr.Code, tt.statusCode)
 			}
