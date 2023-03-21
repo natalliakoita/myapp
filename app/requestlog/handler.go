@@ -11,10 +11,10 @@ import (
 
 type Handler struct {
 	handler http.Handler
-	logger  *logger.Logger
+	logger  logger.LoggerInterface
 }
 
-func NewHandler(h http.HandlerFunc, l *logger.Logger) *Handler {
+func NewHandler(h http.HandlerFunc, l logger.LoggerInterface) *Handler {
 	return &Handler{
 		handler: h,
 		logger:  l,

@@ -20,6 +20,6 @@ func NewApp(
 	}
 }
 
-func (app *App) Logger() *logger.Logger {
-	return app.Logger()
+func (app *App) Logger() logger.LoggerInterface {
+	return app.logger
 }
