@@ -11,7 +11,7 @@ type App struct {
 }
 
 func NewApp(
-	logger *logger.Logger,
+	logger logger.LoggerInterface,
 	svcBook service.BookServiceInterface,
 ) *App {
 	return &App{

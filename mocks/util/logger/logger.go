@@ -5,7 +5,6 @@
 package mock_logger
 
 import (
-	io "io"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -61,20 +60,6 @@ func (m *MockLoggerInterface) Info() *zerolog.Event {
 func (mr *MockLoggerInterfaceMockRecorder) Info() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockLoggerInterface)(nil).Info))
-}
-
-// Output mocks base method.
-func (m *MockLoggerInterface) Output(w io.Writer) zerolog.Logger {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Output", w)
-	ret0, _ := ret[0].(zerolog.Logger)
-	return ret0
-}
-
-// Output indicates an expected call of Output.
-func (mr *MockLoggerInterfaceMockRecorder) Output(w interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Output", reflect.TypeOf((*MockLoggerInterface)(nil).Output), w)
 }
 
 // Warn mocks base method.
