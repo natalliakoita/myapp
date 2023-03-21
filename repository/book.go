@@ -53,9 +53,12 @@ func (r *BookRepo) CreateBook(ctx context.Context, book *model.Book) (*model.Boo
 }
 
 func (r *BookRepo) UpdateBook(ctx context.Context, book *model.Book) error {
-	if err := r.repo.First(&model.Book{}, book.ID).Update(book).Error; err != nil {
+	if err := r.repo.Model(&model.Book{}).Select("updated_at", "title", "author", "published_date", "image_url", "description").Where("id = ?", book.ID).Updates(book).Error; err != nil {
 		return err
 	}
+
+	// Now - r.repo.Model(&model.Book{}).Select("updated_at", "title", "author", "published_date", "image_url", "description").Where("id = ?", book.ID).Updates(book).Error
+	// WAS - r.repo.First(&model.Book{}, book.ID).Update(book).Error
 
 	return nil
 }

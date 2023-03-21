@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"myapp/app/app"
 	mock_service "myapp/mocks/service"
 	mock_logger "myapp/mocks/util/logger"
 	"myapp/model"
@@ -87,10 +88,7 @@ func TestApp_HandleCreateBook(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 
-			a := &App{
-				logger:  mockLogger,
-				svcBook: mockBookService,
-			}
+			a := app.NewApp(mockLogger, mockBookService)
 
 			handler := http.HandlerFunc(a.HandleCreateBook)
 			handler.ServeHTTP(rr, req)
@@ -208,15 +206,12 @@ func TestApp_HandleReadBook(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 
-			a := &App{
-				logger:  mockLogger,
-				svcBook: mockBookService,
-			}
-
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.args.id)
 
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			a := app.NewApp(mockLogger, mockBookService)
 
 			handler := http.HandlerFunc(a.HandleReadBook)
 			handler.ServeHTTP(rr, req)
@@ -335,10 +330,7 @@ func TestApp_ListBooks(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 
-			a := &App{
-				logger:  mockLogger,
-				svcBook: mockBookService,
-			}
+			a := app.NewApp(mockLogger, mockBookService)
 
 			handler := http.HandlerFunc(a.HandleListBooks)
 			handler.ServeHTTP(rr, req)
@@ -443,15 +435,12 @@ func TestApp_HandleUpdateBook(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 
-			a := &App{
-				logger:  mockLogger,
-				svcBook: mockBookService,
-			}
-
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.args.id)
 
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			a := app.NewApp(mockLogger, mockBookService)
 
 			handler := http.HandlerFunc(a.HandleUpdateBook)
 			handler.ServeHTTP(rr, req)
@@ -544,15 +533,12 @@ func TestApp_HandleDeleteBook(t *testing.T) {
 			}
 			rr := httptest.NewRecorder()
 
-			a := &App{
-				logger:  mockLogger,
-				svcBook: mockBookService,
-			}
-
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.args.id)
 
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			a := app.NewApp(mockLogger, mockBookService)
 
 			handler := http.HandlerFunc(a.HandleDeleteBook)
 			handler.ServeHTTP(rr, req)
