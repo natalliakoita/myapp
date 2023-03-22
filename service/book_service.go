@@ -76,12 +76,7 @@ func (b *BookService) UpdateBook(ctx context.Context, id uint, book *model.BookF
 }
 
 func (b *BookService) DeleteBook(ctx context.Context, id uint) error {
-	_, err := b.bookRepo.ReadBook(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	err = b.bookRepo.DeleteBook(ctx, id)
+	err := b.bookRepo.DeleteBook(ctx, id)
 	if err != nil {
 		return err
 	}
